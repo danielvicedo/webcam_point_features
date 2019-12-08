@@ -11,6 +11,7 @@
 
 //consts
 const unsigned int MIN_NUM_FEATURES = 300; //minimum number of point fetaures
+float factor = 0.50;  //Has to be between 0.0 and 1.0. Percentage of the image that the mask will let search keypoints.
 
 int main(int argc, char *argv[])
 {
@@ -21,6 +22,7 @@ int main(int argc, char *argv[])
     orb_detector->setMaxFeatures(MIN_NUM_FEATURES);
     std::vector<cv::KeyPoint> point_set; //set of point features
     cv::Mat descriptor_set; //set of descriptors, for each feature there is an associated descriptor
+
 
 	//check user args
 	switch(argc)
@@ -57,16 +59,35 @@ int main(int argc, char *argv[])
             cv::waitKey();
         }
 
+
+      //**************** Create a Rectangle for the Mask ****************************
+          int width = image.cols*factor;
+          int height = image.rows*factor;
+          // create rectangle
+          //cv::Rect rect(0, 0, width, height);
+          // Point 1 is the upper left corner of the rectangle
+          cv::Point pt1(0, 0);
+          // Point 1 is the bottom right corner of the rectangle
+          cv::Point pt2(width, height);
+          // calls the image, both points and the color of the rectangle
+          cv::rectangle(image, pt1, pt2, cv::Scalar(0, 255, 0));
+
     //**************** Find ORB point fetaures and descriptors ****************************
 
         //clear previous points
         point_set.clear();
 
+        //Mask definition
+        cv::Mat mask(cv::Mat::zeros(image.size(),CV_8U));
+        mask(cv::Rect(0,0,image.cols*factor,image.rows*factor))=1;
+
         //detect and compute(extract) features
-        orb_detector->detectAndCompute(image, cv::noArray(), point_set, descriptor_set);
+        orb_detector->detectAndCompute(image, mask, point_set, descriptor_set);
 
         //draw points on the image
         cv::drawKeypoints( image, point_set, image, 255, cv::DrawMatchesFlags::DEFAULT );
+
+
 
     //********************************************************************
 
@@ -75,5 +96,5 @@ int main(int argc, char *argv[])
 
 		//Waits 30 millisecond to check if 'q' key has been pressed. If so, breaks the loop. Otherwise continues.
     	if( (unsigned char)(cv::waitKey(30) & 0xff) == 'q' ) break;
-    }   
+    }
 }
